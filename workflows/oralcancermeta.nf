@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
+include { SEQTK_SEQ as SEQTK_SEQ_CONTIG_FILTER       } from '../modules/nf-core/seqtk/seq/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -26,15 +26,18 @@ workflow ORALCANCERMETA {
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
+    ch_input = Channel.fromSamplesheet("input")
 
     //
-    // MODULE: Run FastQC
+    // MODULE: Run
+
+
+    
     //
-    FASTQC (
-        ch_samplesheet
-    )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+
+    SEQTK_SEQ_CONTIG_FILTER (ch_samplesheet)
+    ch_assembly_contigs = SEQTK_SEQ_CONTIG_FILTER.out.fastx
+    ch_versions = ch_versions.mix(SEQTK_SEQ_CONTIG_FILTER.out.versions)
 
     //
     // Collate and save software versions
@@ -46,6 +49,9 @@ workflow ORALCANCERMETA {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
+
+    //
+
 
     //
     // MODULE: MultiQC
@@ -70,7 +76,7 @@ workflow ORALCANCERMETA {
         methodsDescriptionText(ch_multiqc_custom_methods_description))
 
     ch_multiqc_files = ch_multiqc_files.mix(
-        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
     ch_multiqc_files = ch_multiqc_files.mix(
         ch_methods_description.collectFile(

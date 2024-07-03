@@ -2,32 +2,27 @@
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/suzuki-lab/oralcancermeta/master/assets/schema_input.json",
     "title": "suzuki-lab/oralcancermeta pipeline - params.input schema",
-    "description": "Schema for the file provided with params.input",
+    "description": "Pipeline for analysing oral cancer patients data at Suzuki lab",
     "type": "array",
     "items": {
-        "type": "object",
-        "properties": {
-            "sample": {
-                "type": "string",
-                "pattern": "^\\S+$",
-                "errorMessage": "Sample name must be provided and cannot contain spaces",
-                "meta": ["id"]
+            "type": "object",
+            "properties": {
+                "sample": {
+                    "type": "string",
+                    "pattern": "^\\S+$",
+                    "errorMessage": "Sample name must be provided and cannot contain spaces",
+                    "meta": ["id"],
+                    "unique": true
+                },
+                "fasta": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.(fasta|fas|fa|fna)(\\.gz)?$",
+                    "errorMessage": "Fasta file for reads must be provided, cannot contain spaces and must have extension '.fasta', '.fas', '.fa' or '.fna' (any of these can be optionally compressed as '.gz')",
+                    "unique": true
+                }
             },
-            "fastq_1": {
-                "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
-            },
-            "fastq_2": {
-                "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
-            }
-        },
-        "required": ["sample", "fastq_1"]
+            "required": ["sample", "fasta"]
+        }
     }
-}

@@ -15,7 +15,7 @@ nextflow.enable.dsl = 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { ORALCANCERMETA  } from './workflows/oralcancermeta'
+include { ORALCANCERMETA          } from './workflows/oralcancermeta'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_oralcancermeta_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_oralcancermeta_pipeline'
 

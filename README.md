@@ -14,6 +14,10 @@
 
 ## Usage
 
+Before running the pipeline, you need to define the $NXF_SINGULARITY_CACHEDIR. In the command line, write:
+`export NXF_SINGULARITY_CACHEDIR='/illumina_disk3/runs5/work_sofia/singularity_cache'`
+
+
 
 <!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
      Explain what rows and columns represent. For instance (please edit as appropriate):
