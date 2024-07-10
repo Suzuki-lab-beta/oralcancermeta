@@ -76,7 +76,14 @@ workflow PIPELINE_INITIALISATION {
     //
     // Create channel from input file provided through params.input
     //
-    ch_samplesheet =Channel.fromSamplesheet("input")
+     Channel
+        .fromSamplesheet("input")
+
+            .map {
+                meta, fastq, fasta ->
+                return [ meta, fastq, fasta ]
+            }
+        .set { ch_samplesheet }
 
     emit:
     samplesheet = ch_samplesheet

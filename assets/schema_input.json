@@ -14,6 +14,13 @@
                     "meta": ["id"],
                     "unique": true
                 },
+                "fastq": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                    "errorMessage": "FastQ file for nanopore reads must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                },
                 "fasta": {
                     "type": "string",
                     "format": "file-path",
@@ -23,6 +30,6 @@
                     "unique": true
                 }
             },
-            "required": ["sample", "fasta"]
+            "required": ["sample", "fastq", "fasta"]
         }
     }

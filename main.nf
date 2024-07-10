@@ -35,17 +35,23 @@ workflow SUZUKILAB_ORALCANCERMETA {
 
     main:
 
+    ch_fastq_gz = samplesheet.map { meta, fastq, fasta -> return [ meta, fastq ] }
+    ch_fasta_gz = samplesheet.map { meta, fastq, fasta -> return [ meta, fasta ] }
+
     //
     // WORKFLOW: Run pipeline
     //
     ORALCANCERMETA (
-        samplesheet
+        ch_fastq_gz,
+        ch_fasta_gz
     )
 
     emit:
+    versions = ORALCANCERMETA.out.versions
     multiqc_report = ORALCANCERMETA.out.multiqc_report // channel: /path/to/multiqc_report.html
 
 }
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -55,6 +61,8 @@ workflow SUZUKILAB_ORALCANCERMETA {
 workflow {
 
     main:
+    ch_versions         = Channel.empty()
+    ch_multiqc_files    = Channel.empty()
 
     //
     // SUBWORKFLOW: Run initialisation tasks
@@ -69,12 +77,15 @@ workflow {
         params.input
     )
 
+
+
     //
     // WORKFLOW: Run main workflow
     //
     SUZUKILAB_ORALCANCERMETA (
         PIPELINE_INITIALISATION.out.samplesheet
     )
+
 
     //
     // SUBWORKFLOW: Run completion tasks

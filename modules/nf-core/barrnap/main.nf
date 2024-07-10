@@ -20,7 +20,7 @@ process BARRNAP {
     script:
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    db         = dbname ? "${dbname}" : 'bac'
+    db         = dbname ? "${dbname}" : 'bac,arc,mito,euk'
     input    = fasta =~ /\.gz$/ ? fasta.name.take(fasta.name.lastIndexOf('.')) : fasta
     gunzip   = fasta =~ /\.gz$/ ? "gunzip -c ${fasta} > ${input}" : ""
 
@@ -32,7 +32,7 @@ process BARRNAP {
         --threads $task.cpus \\
         --kingdom $db \\
         $input \\
-        > rrna_${db}.gff
+        > ${prefix}_rrna_${db}.gff
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

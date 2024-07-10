@@ -10,14 +10,21 @@
 
 ## Introduction
 
-**suzuki-lab/oralcancermeta** is a bioinformatics pipeline that ...
+**suzuki-lab/oralcancermeta** is a bioinformatics pipeline that analyses long-read sequencing data from oral cancer patients between and after cancer treatment.
 
 ## Usage
 
-Before running the pipeline, you need to define the $NXF_SINGULARITY_CACHEDIR. In the command line, write:
-`export NXF_SINGULARITY_CACHEDIR='/illumina_disk3/runs5/work_sofia/singularity_cache'`
+Before running the pipeline, you need to define the $NXF_SINGULARITY_CACHEDIR. In the command line, please write:
 
+`export NXF_SINGULARITY_CACHEDIR='/illumina_disk3/runs5/work_sofia/singularity_cache`
 
+### Seqtk
+
+Reads with length `< 1000` have been filtered out.
+
+### Barrnap
+
+The database used is `Bacteria(bac)` and the default values have been used.
 
 <!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
      Explain what rows and columns represent. For instance (please edit as appropriate):
