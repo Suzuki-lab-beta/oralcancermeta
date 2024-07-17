@@ -9,6 +9,8 @@ include { BARRNAP                                    } from '../modules/nf-core/
 include { MINIMAP2_INDEX                             } from '../modules/nf-core/minimap2/index/main'
 include { MINIMAP2_ALIGN                             } from '../modules/nf-core/minimap2/align/main'
 include { SEMIBIN_SINGLEEASYBIN                      } from '../modules/nf-core/semibin/singleeasybin/main'
+include { SEQKIT_GREP as SEQKIT_GREP_NON_BACTERIAL   } from '../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP as SEQKIT_GREP_BACTERIAL       } from '../modules/nf-core/seqkit/grep/main'
 include { MULTIQC                                    } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap                           } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc                       } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -81,12 +83,41 @@ workflow ORALCANCERMETA {
     // MODULE: SemiBin2
     //
 
-    //Unzip the 
-    ch_semibin_reads = ch_contigs_filtered.join(MINIMAP2_ALIGN.out.bam).view()
+    //Double check here join or combine??
+    ch_semibin_reads = ch_contigs_filtered.join(MINIMAP2_ALIGN.out.bam)
+
 
     SEMIBIN_SINGLEEASYBIN(ch_semibin_reads)
     ch_versions = ch_versions.mix(SEMIBIN_SINGLEEASYBIN.out.versions)
 
+
+    //
+    // MODULE: Seqkit grep to filter the bacterial contigs
+    //
+
+    ch_barrnap = BARRNAP.out.gff
+    ch_semibin_fasta = SEMIBIN_SINGLEEASYBIN.out.output_fasta
+
+    ch_gff = BARRNAP.out.gff
+                    .splitCsv (skip: 1, sep:"\t" )
+                    .map { row -> [row[0].id, row[1][0]] }
+                    .unique()
+
+
+    ch_gff.collectFile(newLine: true) { meta, contigs -> [ "${meta}_contigs.txt", contigs ] }
+    .map { contigs -> [ ["id": contigs.simpleName.split("_contigs")[0]], contigs ] }
+    .set {ch_contigs}
+
+
+    ch_barrnap_semibin = ch_contigs.combine(ch_semibin_fasta, by: 0 )
+
+
+    ch_filter_gff = ch_barrnap_semibin.map { meta, contigs, semibin_reads -> return [ meta, contigs ] }
+    ch_filter_semibin = ch_barrnap_semibin.map { meta, contigs, semibin_reads -> return [ meta, semibin_reads ] }
+
+
+    SEQKIT_GREP_NON_BACTERIAL ( ch_filter_semibin, ch_filter_gff)
+    SEQKIT_GREP_BACTERIAL ( ch_filter_semibin, ch_filter_gff)
 
 
     //

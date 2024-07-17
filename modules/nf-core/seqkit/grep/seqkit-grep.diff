@@ -1,0 +1,23 @@
+Changes in module 'nf-core/seqkit/grep'
+--- modules/nf-core/seqkit/grep/main.nf
++++ modules/nf-core/seqkit/grep/main.nf
+@@ -10,7 +10,7 @@
+ 
+     input:
+     tuple val(meta), path(sequence)
+-    path pattern
++    tuple val(meta2),path(pattern, stageAs: 'contigs.txt')
+ 
+     output:
+     tuple val(meta), path("*.{fa,fq}.gz")  , emit: filter
+@@ -33,7 +33,7 @@
+         --threads $task.cpus \\
+         ${pattern_file} \\
+         ${sequence} \\
+-        -o ${prefix}.${suffix}.gz \\
++        -o ${prefix}.${suffix}.gz 
+ 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+
+************************************************************

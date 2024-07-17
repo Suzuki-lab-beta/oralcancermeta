@@ -6,31 +6,32 @@ Changes in module 'nf-core/semibin/singleeasybin'
      tag "$meta.id"
 -    label 'process_medium'
 +    label 'process_high'
- 
+
      conda "${moduleDir}/environment.yml"
      container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
 -        'https://depot.galaxyproject.org/singularity/semibin:1.4.0--pyh7cba7a3_0':
 -        'biocontainers/semibin:1.4.0--pyh7cba7a3_0' }"
 +        'https://depot.galaxyproject.org/singularity/semibin:2.1.0--pyhdfd78af_0':
 +        'biocontainers/semibin:2.1.0--pyhdfd78af_0' }"
- 
+
      input:
      tuple val(meta), path(fasta), path(bam)
- 
+
      output:
      tuple val(meta), path("*.csv")                        , emit: csv
 -    tuple val(meta), path("*.h5")                         , emit: model
 -    tuple val(meta), path("output_prerecluster_bins/*.fa"), emit: output_fasta
 -    tuple val(meta), path("output_recluster_bins/*.fa")   , emit: recluster_fasta
-+     tuple val(meta), path("*.h5")                        , emit: model            ,optional: true
-+    tuple val(meta), path("output_prerecluster_bins/*.fa"), emit: output_fasta     ,optional: true
++    tuple val(meta), path("*.h5")                         , emit: model            ,optional: true
++    tuple val(meta), path("output_bins/*.fa.gz")          ,emit: output_fasta
 +    tuple val(meta), path("output_recluster_bins/*.fa")   , emit: recluster_fasta  ,optional: true
      tuple val(meta), path("*.tsv")                        , emit: tsv
      path "versions.yml"           , emit: versions
- 
+
 @@ -27,9 +27,9 @@
      def prefix = task.ext.prefix ?: "${meta.id}"
      """
+ ls
  
 -    SemiBin \\
 +    SemiBin2 \\
@@ -41,7 +42,7 @@ Changes in module 'nf-core/semibin/singleeasybin'
          -b $bam \\
          -o $prefix \\
 @@ -40,7 +40,7 @@
- 
+
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
 -        SemiBin: \$( SemiBin --version )

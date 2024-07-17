@@ -13,7 +13,7 @@ process SEMIBIN_SINGLEEASYBIN {
     output:
     tuple val(meta), path("*.csv")                        , emit: csv
     tuple val(meta), path("*.h5")                         , emit: model            ,optional: true
-    tuple val(meta), path("output_prerecluster_bins/*.fa"), emit: output_fasta     ,optional: true
+    tuple val(meta), path("output_bins/*.fa.gz")          ,emit: output_fasta      
     tuple val(meta), path("output_recluster_bins/*.fa")   , emit: recluster_fasta  ,optional: true
     tuple val(meta), path("*.tsv")                        , emit: tsv
     path "versions.yml"           , emit: versions

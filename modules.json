@@ -77,6 +77,14 @@
                         ],
                         "patch": "modules/nf-core/semibin/singleeasybin/semibin-singleeasybin.diff"
                     },
+                    "seqkit/grep": {
+                        "branch": "master",
+                        "git_sha": "2be41ca2cc780eca4293d1b0dd3850b0b7ac40a3",
+                        "installed_by": [
+                            "modules"
+                        ],
+                        "patch": "modules/nf-core/seqkit/grep/seqkit-grep.diff"
+                    },
                     "seqtk/seq": {
                         "branch": "master",
                         "git_sha": "7f88aae93c69586c0789322b77743ee0ef469502",
