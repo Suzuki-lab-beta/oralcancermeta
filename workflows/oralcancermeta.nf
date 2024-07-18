@@ -11,6 +11,9 @@ include { MINIMAP2_ALIGN                             } from '../modules/nf-core/
 include { SEMIBIN_SINGLEEASYBIN                      } from '../modules/nf-core/semibin/singleeasybin/main'
 include { SEQKIT_GREP as SEQKIT_GREP_NON_BACTERIAL   } from '../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_GREP as SEQKIT_GREP_BACTERIAL       } from '../modules/nf-core/seqkit/grep/main'
+include { GENOMAD_DOWNLOAD                           } from '../modules/nf-core/genomad/download/main'
+include { GENOMAD_ENDTOEND as GENOMAD_CONSERVATIVE   } from '../modules/nf-core/genomad/endtoend/main'
+include { GENOMAD_ENDTOEND as GENOMAD_DEFAULT        } from '../modules/nf-core/genomad/endtoend/main'
 include { MULTIQC                                    } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap                           } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc                       } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -117,7 +120,30 @@ workflow ORALCANCERMETA {
 
 
     SEQKIT_GREP_NON_BACTERIAL ( ch_filter_semibin, ch_filter_gff)
-    SEQKIT_GREP_BACTERIAL ( ch_filter_semibin, ch_filter_gff)
+    ch_bacterial_contrigs = SEQKIT_GREP_BACTERIAL ( ch_filter_semibin, ch_filter_gff)
+
+    ch_versions = ch_versions.mix( SEQKIT_GREP_BACTERIAL.out.versions )
+
+    //
+    // Module: geNomad download
+    //
+
+    ch_genomad_db = GENOMAD_DOWNLOAD( ).genomad_db
+    ch_versions = ch_versions.mix( GENOMAD_DOWNLOAD.out.versions )
+
+    //
+    // Module geNomad predict-conservative and default
+    //
+
+    ch_non_bacterial_conservative = GENOMAD_CONSERVATIVE ( SEQKIT_GREP_NON_BACTERIAL.out.filter, ch_genomad_db )
+    ch_non_bacterial_default = GENOMAD_DEFAULT  ( SEQKIT_GREP_NON_BACTERIAL.out.filter, ch_genomad_db )
+    ch_virus_summaries_tsv_conservative = GENOMAD_CONSERVATIVE.out.virus_summary.map { meta,virus_summary -> [["conservative_virus":meta], virus_summary.countLines()-1]}
+    ch_virus_summaries_tsv_default = GENOMAD_DEFAULT.out.virus_summary.map { meta,virus_summary -> [ ["default_virus":meta], virus_summary.countLines()-1]}
+    ch_plasmid_summaries_tsv_conservative = GENOMAD_CONSERVATIVE.out.plasmid_summary.map { meta,virus_summary -> [["conservative_plasmid":meta], virus_summary.countLines()-1]}
+    ch_plasmid_summaries_tsv_default = GENOMAD_DEFAULT.out.plasmid_summary.map { meta,virus_summary -> [ ["default_plasmid":meta], virus_summary.countLines()-1]}
+    ch_versions = ch_versions.mix(GENOMAD_CONSERVATIVE.out.versions)
+
+   
 
 
     //
