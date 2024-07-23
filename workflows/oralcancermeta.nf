@@ -10,6 +10,8 @@ include { MINIMAP2_INDEX                             } from '../modules/nf-core/
 include { MINIMAP2_ALIGN                             } from '../modules/nf-core/minimap2/align/main'
 include { SEMIBIN_SINGLEEASYBIN                      } from '../modules/nf-core/semibin/singleeasybin/main'
 include { SEQKIT_GREP as SEQKIT_GREP_NON_BACTERIAL   } from '../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP as SEQKIT_GREP_NON_PLASMID     } from '../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP as SEQKIT_GREP_PLASMID         } from '../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_GREP as SEQKIT_GREP_BACTERIAL       } from '../modules/nf-core/seqkit/grep/main'
 include { GENOMAD_DOWNLOAD                           } from '../modules/nf-core/genomad/download/main'
 include { GENOMAD_ENDTOEND as GENOMAD_CONSERVATIVE   } from '../modules/nf-core/genomad/endtoend/main'
@@ -113,6 +115,7 @@ workflow ORALCANCERMETA {
 
 
     ch_barrnap_semibin = ch_contigs.combine(ch_semibin_fasta, by: 0 )
+    ch_barrnap_semibin
 
 
     ch_filter_gff = ch_barrnap_semibin.map { meta, contigs, semibin_reads -> return [ meta, contigs ] }
@@ -120,7 +123,7 @@ workflow ORALCANCERMETA {
 
 
     SEQKIT_GREP_NON_BACTERIAL ( ch_filter_semibin, ch_filter_gff)
-    ch_bacterial_contrigs = SEQKIT_GREP_BACTERIAL ( ch_filter_semibin, ch_filter_gff)
+    ch_bacterial_contigs = SEQKIT_GREP_BACTERIAL ( ch_filter_semibin, ch_filter_gff)
 
     ch_versions = ch_versions.mix( SEQKIT_GREP_BACTERIAL.out.versions )
 
@@ -132,18 +135,38 @@ workflow ORALCANCERMETA {
     ch_versions = ch_versions.mix( GENOMAD_DOWNLOAD.out.versions )
 
     //
-    // Module geNomad predict-conservative and default
+    // Module: geNomad predict-conservative and default
     //
 
     ch_non_bacterial_conservative = GENOMAD_CONSERVATIVE ( SEQKIT_GREP_NON_BACTERIAL.out.filter, ch_genomad_db )
-    ch_non_bacterial_default = GENOMAD_DEFAULT  ( SEQKIT_GREP_NON_BACTERIAL.out.filter, ch_genomad_db )
+    //SEQKIT_GREP_NON_BACTERIAL.out.filter
+    //ch_non_bacterial_default = GENOMAD_DEFAULT  ( SEQKIT_GREP_NON_BACTERIAL.out.filter, ch_genomad_db )
     ch_virus_summaries_tsv_conservative = GENOMAD_CONSERVATIVE.out.virus_summary.map { meta,virus_summary -> [["conservative_virus":meta], virus_summary.countLines()-1]}
-    ch_virus_summaries_tsv_default = GENOMAD_DEFAULT.out.virus_summary.map { meta,virus_summary -> [ ["default_virus":meta], virus_summary.countLines()-1]}
+    //ch_virus_summaries_tsv_default = GENOMAD_DEFAULT.out.virus_summary.map { meta,virus_summary -> [ ["default_virus":meta], virus_summary.countLines()-1]}
     ch_plasmid_summaries_tsv_conservative = GENOMAD_CONSERVATIVE.out.plasmid_summary.map { meta,virus_summary -> [["conservative_plasmid":meta], virus_summary.countLines()-1]}
-    ch_plasmid_summaries_tsv_default = GENOMAD_DEFAULT.out.plasmid_summary.map { meta,virus_summary -> [ ["default_plasmid":meta], virus_summary.countLines()-1]}
+    //ch_plasmid_summaries_tsv_default = GENOMAD_DEFAULT.out.plasmid_summary.map { meta,virus_summary -> [ ["default_plasmid":meta], virus_summary.countLines()-1]}
     ch_versions = ch_versions.mix(GENOMAD_CONSERVATIVE.out.versions)
 
-   
+    // Module: seqkit grep, filter out the viral and plasmid contigs from the non-bacterial
+
+    ch_viral_plasmid = GENOMAD_CONSERVATIVE.out.virus_summary.concat(GENOMAD_CONSERVATIVE.out.plasmid_summary)
+                    .splitCsv (skip: 1, sep:"\t" )
+                    .map { row -> [row[0].id, row[1][0]] }
+                    .unique()
+
+   ch_viral_plasmid.collectFile(newLine: true) { meta, contigs -> [ "${meta}_viral_plasmid_contigs.txt", contigs ] }
+   .map { contigs -> [ ["id": contigs.simpleName.split("_viral_plasmid_contigs")[0]], contigs ] }
+   .set {ch_viral_plasmid_contigs}
+
+   ch_non_viral_plasmid = ch_viral_plasmid_contigs.combine(SEQKIT_GREP_NON_BACTERIAL.out.filter, by: 0 )
+
+   ch_filter_plasmid = ch_non_viral_plasmid.map { meta, contigs, non_bacterial_reads -> return [ meta, contigs ] }
+   ch_filter_non_bacterial = ch_non_viral_plasmid.map { meta, contigs, non_bacterial_reads -> return [ meta, non_bacterial_reads ] }.view()
+
+   SEQKIT_GREP_NON_PLASMID ( ch_filter_non_bacterial, ch_filter_plasmid )
+   ch_plasmid_contigs = SEQKIT_GREP_PLASMID ( ch_filter_non_bacterial, ch_filter_plasmid)
+
+   ch_versions = ch_versions.mix( SEQKIT_GREP_NON_PLASMID.out.versions )
 
 
     //
