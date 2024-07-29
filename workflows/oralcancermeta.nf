@@ -4,23 +4,26 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { SEQTK_SEQ as SEQTK_SEQ_CONTIG_FILTER       } from '../modules/nf-core/seqtk/seq/main'
-include { BARRNAP                                    } from '../modules/nf-core/barrnap/main'
-include { MINIMAP2_INDEX                             } from '../modules/nf-core/minimap2/index/main'
-include { MINIMAP2_ALIGN                             } from '../modules/nf-core/minimap2/align/main'
-include { SEMIBIN_SINGLEEASYBIN                      } from '../modules/nf-core/semibin/singleeasybin/main'
-include { SEQKIT_GREP as SEQKIT_GREP_NON_BACTERIAL   } from '../modules/nf-core/seqkit/grep/main'
-include { SEQKIT_GREP as SEQKIT_GREP_NON_PLASMID     } from '../modules/nf-core/seqkit/grep/main'
-include { SEQKIT_GREP as SEQKIT_GREP_PLASMID         } from '../modules/nf-core/seqkit/grep/main'
-include { SEQKIT_GREP as SEQKIT_GREP_BACTERIAL       } from '../modules/nf-core/seqkit/grep/main'
-include { GENOMAD_DOWNLOAD                           } from '../modules/nf-core/genomad/download/main'
-include { GENOMAD_ENDTOEND as GENOMAD_CONSERVATIVE   } from '../modules/nf-core/genomad/endtoend/main'
-include { GENOMAD_ENDTOEND as GENOMAD_DEFAULT        } from '../modules/nf-core/genomad/endtoend/main'
-include { MULTIQC                                    } from '../modules/nf-core/multiqc/main'
-include { paramsSummaryMap                           } from 'plugin/nf-validation'
-include { paramsSummaryMultiqc                       } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML                     } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText                     } from '../subworkflows/local/utils_nfcore_oralcancermeta_pipeline'
+include { SEQTK_SEQ as SEQTK_SEQ_CONTIG_FILTER                 } from '../modules/nf-core/seqtk/seq/main'
+include { BARRNAP                                              } from '../modules/nf-core/barrnap/main'
+include { MINIMAP2_INDEX                                       } from '../modules/nf-core/minimap2/index/main'
+include { MINIMAP2_ALIGN                                       } from '../modules/nf-core/minimap2/align/main'
+include { SEMIBIN_SINGLEEASYBIN                                } from '../modules/nf-core/semibin/singleeasybin/main'
+include { SEQKIT_GREP as SEQKIT_GREP_NON_BACTERIAL             } from '../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP as SEQKIT_GREP_NON_PLASMID               } from '../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP as SEQKIT_GREP_PLASMID                   } from '../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP as SEQKIT_GREP_BACTERIAL                 } from '../modules/nf-core/seqkit/grep/main'
+include { GENOMAD_DOWNLOAD                                     } from '../modules/nf-core/genomad/download/main'
+include { GENOMAD_ENDTOEND as GENOMAD_CONSERVATIVE             } from '../modules/nf-core/genomad/endtoend/main'
+include { GENOMAD_ENDTOEND as GENOMAD_DEFAULT                  } from '../modules/nf-core/genomad/endtoend/main'
+include { MINIMAP2_INDEX   as MINIMAP2_FUNGI_EUKARYOTIC_VIRUS  } from '../modules/nf-core/minimap2/index/main'
+include { MINIMAP2_ALIGN   as MINIMAP2_ALIGN_EUKARYOTIC_VIRUS  } from '../modules/nf-core/minimap2/align/main'
+include { MSAMTOOLS_FILTER                                     } from '../modules/local/msamtools_filter'
+include { MULTIQC                                              } from '../modules/nf-core/multiqc/main'
+include { paramsSummaryMap                                     } from 'plugin/nf-validation'
+include { paramsSummaryMultiqc                                 } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML                               } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText                               } from '../subworkflows/local/utils_nfcore_oralcancermeta_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,13 +164,54 @@ workflow ORALCANCERMETA {
    ch_non_viral_plasmid = ch_viral_plasmid_contigs.combine(SEQKIT_GREP_NON_BACTERIAL.out.filter, by: 0 )
 
    ch_filter_plasmid = ch_non_viral_plasmid.map { meta, contigs, non_bacterial_reads -> return [ meta, contigs ] }
-   ch_filter_non_bacterial = ch_non_viral_plasmid.map { meta, contigs, non_bacterial_reads -> return [ meta, non_bacterial_reads ] }.view()
+   ch_filter_non_bacterial = ch_non_viral_plasmid.map { meta, contigs, non_bacterial_reads -> return [ meta, non_bacterial_reads ] }
 
    SEQKIT_GREP_NON_PLASMID ( ch_filter_non_bacterial, ch_filter_plasmid )
    ch_plasmid_contigs = SEQKIT_GREP_PLASMID ( ch_filter_non_bacterial, ch_filter_plasmid)
 
+   ch_non_plasmid_contigs = SEQKIT_GREP_NON_PLASMID.out.filter
+
    ch_versions = ch_versions.mix( SEQKIT_GREP_NON_PLASMID.out.versions )
 
+
+    //
+    // Module minimap2 index for plasmids and fungi
+    //
+
+    Channel.fromPath(params.eukaryotic_virus_genome)
+        .map { file -> tuple(file.baseName, file) }
+        .set { ch_eukaryotic_virus }
+
+
+
+    ch_non_plasmid_index = MINIMAP2_FUNGI_EUKARYOTIC_VIRUS(ch_eukaryotic_virus ).index
+
+    ch_non_plasmid_contigs_index = ch_non_plasmid_contigs.combine(ch_eukaryotic_virus)
+
+
+    non_plasmid_index = ch_non_plasmid_contigs_index.map { meta, reads, db, index -> return [ meta, reads ] }
+    non_plasmid_contigs = ch_non_plasmid_contigs_index.map { meta, reads, db, index -> return [ meta, index ] }
+
+
+
+
+    MINIMAP2_ALIGN_EUKARYOTIC_VIRUS (
+            non_plasmid_contigs,
+            non_plasmid_index,
+            true,
+            false,
+            false,
+            false
+        )
+
+
+    /*ch_minimap2_mapped_eukaryotic = MINIMAP2_ALIGN_EUKARYOTIC_VIRUS.out.bam
+        .map {
+            meta, reads ->
+                [ meta, reads, [] ]
+        }.view()*/
+
+    MSAMTOOLS_FILTER(MINIMAP2_ALIGN_EUKARYOTIC_VIRUS.out.bam).view()
 
     //
     // Collate and save software versions

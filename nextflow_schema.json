@@ -142,6 +142,12 @@
                     "description": "Filter out contigs shorter than this.",
                     "fa_icon": "fas fa-align-justify"
                 },
+                "eukaryotic_virus_genome": {
+                    "type": "string",
+                    "fa_icon": "fas fa-file-alt",
+                    "default": "/illumina_disk3/runs4/work_SpaceDrKiguchi/public_db/FungiDB/FungiDB.v64.fasta",
+                    "description": "SpSpecify path to eukaryotic virus reference genome"
+                },
                 "help": {
                     "type": "boolean",
                     "description": "Display help text.",
