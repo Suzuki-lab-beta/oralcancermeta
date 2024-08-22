@@ -56,6 +56,13 @@
                         "git_sha": "04fbbc7c43cebc0b95d5b126f6d9fe4effa33519",
                         "installed_by": ["modules"]
                     },
+                    "paftools/sam2paf": {
+                        "branch": "master",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
                     "semibin/singleeasybin": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",

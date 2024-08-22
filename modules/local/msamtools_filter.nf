@@ -25,8 +25,8 @@ process MSAMTOOLS_FILTER {
         $args \\
         -t $task.cpus \\
         -b \\
-        -l 100 \\
-        -p 70 \\
+        -l 1000 \\
+        -p 95 \\
         -z 50 \\
         $reads \\
         > ${prefix}_filtered.bam
